@@ -9,6 +9,7 @@
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
 
+    <link rel="import" href="../../caas-auth/caas-auth.html">
     <link rel="import" href="../caas-investor-qualification-test.html">
 
     <style is="custom-style" include="demo-pages-shared-styles">
@@ -19,8 +20,89 @@
     <div class="vertical-section-container centered">
       <h3>Basic caas-investor-qualification-test Demo</h3>
       <demo-snippet>
-        <template>
-          <caas-investor-qualification-test></caas-investor-qualification-test>
+        <template is="dom-bind" id="demo">
+
+          <caas-auth
+            id="auth"
+            api-endpoint="http://canapi.local"
+            signed-in="{{signedIn}}"
+            access-token="{{accessToken}}"
+            user-id="{{investorId}}"
+          ></caas-auth>
+
+          <h2>Sign in</h2>
+
+          <template is="dom-if" if="[[!signedIn]]">
+            <form on-submit="signIn">
+              <label for="username">username</label><br>
+              <input type="text" id="username" value="investor@caastest.local"><p>
+              <label for="password">password</label><br>
+              <input type="password" id="password" value="abc123"><p>
+              <input type="submit" value="Sign In">
+            </form>
+          </template>
+            
+          <template is="dom-if" if="[[signedIn]]">
+            <label for="token">signed in</label><br>
+            <small>[[accessToken]]</small>
+          </template>
+
+          <caas-investor-qualification-test
+            api-endpoint="http://canapi.local"
+            investor-id="[[investorId]]"
+            access-token="[[accessToken]]"
+            experienced="{{experienced}}"
+            newbie="{{newbie}}"
+            expects-repayment="{{expectsRepayment}}"
+            invests-much="{{investsMuch}}"
+            prepared-to-help="{{preparedToHelp}}"
+            investor-qualified="{{investorQualified}}"
+            investor-qualification="{{qualification}}"
+            qualification-saved="{{qualificationSaved}}"
+            questions="{{questions}}"
+          ></caas-investor-qualification-test>
+
+          <h2>Current Values</h2>
+
+          <strong>Investor Qualified: <span>[[investorQualified]]</span></strong><br>
+          <strong>Investor Qualification Saved: <span>[[qualificationSaved]]</span></strong><br>
+          <strong>Investor Qualification: <span>[[qualification]]</span></strong><br>
+
+          <h2>Test</h2>
+
+          <h3>[[questions.experienced]]</h3>
+          <label><input type="checkbox" checked="{{experienced::change}}"> Ja</label>
+
+          <h3>[[questions.newbie]]</h3>
+          <label><input type="checkbox" checked="{{newbie::change}}"> Ja</label>
+
+          <h3>[[questions.expectsRepayment]]</h3>
+          <select value="{{expectsRepayment::change}}">
+            <option value="money back">krijg ik mijn geld gegarandeerd terug.</option>
+            <option value="risk of losing">is er een kans dat ik mijn geld kwijt zal raken.</option>
+            <option value="dont know">weet ik niet wat er precies gebeurt.</option>
+          </select>
+
+          <h3>[[questions.investsMuch]]</h3>
+          <label><input type="checkbox" checked="{{investsMuch::change}}"> Ja</label>
+
+          <h3>[[questions.preparedToHelp]]</h3>
+          <label><input type="checkbox" checked="{{preparedToHelp::change}}"> Ja</label>
+
+          <script>
+            var d = document.querySelector('#demo');
+            var auth = document.querySelector('#auth');
+
+            d.signIn = function(evt) {
+              evt.preventDefault();
+              auth.signIn(
+                document.querySelector('#username').value,
+                document.querySelector('#password').value,
+                'investor'
+              );
+            }
+            </script>
+
         </template>
       </demo-snippet>
     </div>

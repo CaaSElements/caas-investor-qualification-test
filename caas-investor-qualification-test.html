@@ -1,4 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../caas-auth-behavior/caas-auth-behavior.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <!--
 `caas-investor-qualification-test`
@@ -9,25 +11,168 @@ Polymer (AFM) Investor Qualification Element for Crowdfunding as a Service Solut
 
 <dom-module id="caas-investor-qualification-test">
   <template>
-    <style>
-      :host {
-        display: block;
-      }
-    </style>
-    <h2>Hello [[prop1]]</h2>
+
+    <iron-ajax
+      id="getQualification"
+      url="[[apiEndpoint]]/investors/[[investorId]]/qualified"
+      handle-as="json"
+      headers="[[_authHeader]]"
+      method="GET"
+      last-response="{{_getResponse}}"
+      on-error="_handleQualificationSaveError"
+      auto="[[accessToken]]"
+      debounce-duration="3000"
+    ></iron-ajax>
+
+    <iron-ajax
+      id="saveQualification"
+      url="[[apiEndpoint]]/investors/[[investorId]]/qualified"
+      handle-as="json"
+      headers="[[_authHeader]]"
+      method="POST"
+      on-response="_handleQualificationSaved"
+      on-error="_handleQualificationSaveError"
+      debounce-duration="3000"
+    ></iron-ajax>
+
   </template>
 
   <script>
     Polymer({
 
       is: 'caas-investor-qualification-test',
+      behaviors: [CaasAuthBehavior],
 
       properties: {
-        prop1: {
+
+        apiEndpoint: {
           type: String,
-          value: 'caas-investor-qualification-test',
         },
+
+        investorId: {
+          type: String
+        },
+
+        investorQualification: {
+          type: String,
+          readOnly: true,
+          notify: true
+        },
+
+        investorQualified: {
+          type: Boolean,
+          computed: '_computeQualified(experienced, newbie, expectsRepayment, investsMuch, preparedToHelp, qualificationSaved)',
+          notify: true
+        },
+
+        experienced: {
+          type: Boolean
+        },
+
+        newbie: {
+          type: Boolean
+        },
+
+        expectsRepayment: {
+          type: String,
+          observer: '_expectsRepaymentChanged'
+        },
+
+        investsMuch: {
+          type: Boolean
+        },
+
+        preparedToHelp: {
+          type: Boolean
+        },
+
+        qualificationSaved: {
+          type: Boolean,
+          readOnly: true,
+          notify: true
+        },
+
+        questions: {
+          type: Array,
+          readOnly: true,
+          notify: true,
+          value: {
+            'experienced': 'Heb je ervaring met financiële producten zoals leningen en aandelen?',
+            'newbie': 'Heb je eerder geïnvesteerd in een lening- of aandelencampagne op een ander crowdfundingplatform?',
+            'expectsRepayment': 'Wanneer ik mijn geld investeer in een lening- of aandelencampagne bij CrowdAboutNow',
+            'investsMuch': 'Is het verstandig een groot deel van je vermogen te investeren in crowdfunding?',
+            'preparedToHelp': 'Ik ben bereid de ondernemer ook op andere manieren te helpen dan alleen met een investering.'
+          },
+
+        },
+
+        _getResponse: {
+          type: Object,
+          observer: '_getReponseChanged'
+        }
+
       },
+
+      observers: [
+        '_setQualification(experienced, newbie, expectsRepayment, investsMuch, preparedToHelp)',
+        'saveQualification(investorQualification, investorId, accessToken)'
+      ],
+
+      saveQualification: function() {
+        var postBody = {
+          'investmentExperience': this.experienced,
+          'newToCrowdFunding': this.newbie,
+          'whenInvesting': this.expectsRepayment,
+          'wiseToInvestMuch': this.investsMuch,
+          'helpOutInOtherWays': this.preparedToHelp        
+        };
+        this.$.saveQualification.body = JSON.stringify(postBody);        
+        this.$.saveQualification.generateRequest();
+      },
+
+      _computeQualified: function(experienced, newbie, expectsRepayment, investsMuch, preparedToHelp, qualificationSaved) {
+        return true;
+      },
+
+      _setQualification: function(experienced, newbie, expectsRepayment, investsMuch, preparedToHelp) {
+
+        if(
+         experienced === true &&
+         newbie === true &&
+         expectsRepayment == "risk of losing" &&
+         investsMuch === false
+        ) return this._setInvestorQualification("high");
+
+        if(
+          investsMuch === true ||
+          expectsRepayment == "money back" ||
+          expectsRepayment == "dont know"
+        ) return this._setInvestorQualification("low");
+
+        this._setInvestorQualification("medium");
+      },
+
+      _expectsRepaymentChanged: function(value) {
+        var allowedValues = ['risk of losing', 'money back', 'dont know', null];
+        if(allowedValues.indexOf(value) === -1) this.expectsRepayment = null;
+      },
+
+      _handleQualificationSaved: function() {
+        this._setQualificationSaved(true);
+      },
+
+      _handleQualificationSaveError: function() {
+        this._setQualificationSaved(false);
+      },
+
+      _getReponseChanged: function(responseData) {
+        if(!responseData) return;
+        this.experienced = responseData.investmentExperience;
+        this.newbie = responseData.newToCrowdFunding;
+        this.expectsRepayment = responseData.whenInvesting;
+        this.investsMuch = responseData.wiseToInvestMuch;
+        this.preparedToHelp = responseData.helpOutInOtherWays;
+      }
 
     });
   </script>
