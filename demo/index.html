@@ -60,15 +60,25 @@
             investor-qualification="{{qualification}}"
             qualification-saved="{{qualificationSaved}}"
             questions="{{questions}}"
+            loading-saved-qualification="{{loadingSavedQualification}}"
+            saving-qualification="{{savingQualification}}"
           ></caas-investor-qualification-test>
 
           <h2>Current Values</h2>
+
+          <template is="dom-if" if="[[loadingSavedQualification]]">
+            <span>Loading user qualification...</span><br>
+          </template>
 
           <strong>Investor Qualified: <span>[[investorQualified]]</span></strong><br>
           <strong>Investor Qualification Saved: <span>[[qualificationSaved]]</span></strong><br>
           <strong>Investor Qualification: <span>[[qualification]]</span></strong><br>
 
           <h2>Test</h2>
+
+          <template is="dom-if" if="[[savingQualification]]">
+            <span>Saving user qualification...</span>
+          </template>          
 
           <h3>[[questions.experienced]]</h3>
           <label><input type="checkbox" checked="{{experienced::change}}"> Ja</label>
